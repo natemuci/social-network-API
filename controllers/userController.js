@@ -1,5 +1,6 @@
 
-const { User, Thought } = require('../models');
+const { populate } = require('../models/User');
+const User = require('../models/User');
 
 
 module.exports = {
@@ -12,7 +13,9 @@ module.exports = {
   
   getSingleUser(req, res) {
     User.findOne({ _id: req.params.userId })
-      .select('-__v')
+    .populate({path: "thoughts"})
+    .populate({path: "friends"})
+      
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with that ID' })
@@ -50,38 +53,32 @@ module.exports = {
       });
   },
 
-  
-  addThought(req, res) {
-    console.log('You are adding a thought');
-    console.log(req.body);
+  updateUser(req,res){
     User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $addToSet: { assignments: req.body } },
-      { runValidators: true, new: true }
+      { ...req.body },
+      { new: true }
     )
-      .then((user) =>
-        !user
-          ? res
-              .status(404)
-              .json({ message: 'No user found with that ID :(' })
-          : res.json(user)
-      )
+    .then((updatedData) => res.json(updatedData))
       .catch((err) => res.status(500).json(err));
   },
   
-  removeThought(req, res) {
-    UserfindOneAndUpdate(
-      { _id: req.params.userId },
-      { $pull: { thought: { thoughtId: req.params.assignmentId } } },
-      { runValidators: true, new: true }
+  addFriend(req, res){
+    User.findOneAndUpdate(
+      {_id: req.params.userId},
+      {$push: {friends: req.params.friendId}},
+      {new: true}
     )
-      .then((user) =>
-        !user
-          ? res
-              .status(404)
-              .json({ message: 'No user found with that ID :(' })
-          : res.json(user)
-      )
-      .catch((err) => res.status(500).json(err));
+    .then((updatedFriends) => res.json(updatedFriends))
+    .catch((err) => res.status(500).json(err));
   },
+  deleteFriend(req, res){
+    User.findOneAndUpdate(
+      {_id: req.params.userId},
+      {$pull: { friends: req.params.friendId}},
+      {new: true}
+    )
+    .then((deletedFriend) => res.json(deletedFriend))
+    .catch((err) => res.status(500).json(err));
+  }
 };
